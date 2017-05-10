@@ -218,14 +218,24 @@
                                     <autoresizingMask key="autoresizingMask"/>
                                 </tableHeaderView>
                             </scrollView>
+                            <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="NO" translatesAutoresizingMaskIntoConstraints="NO" id="OMU-g1-G38">
+                                <rect key="frame" x="8" y="15" width="225" height="13"/>
+                                <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="AirPod Verfügbarkeitsüberprüfungsprogramm" id="TYf-kf-YQR">
+                                    <font key="font" metaFont="system" size="10"/>
+                                    <color key="textColor" name="gridColor" catalog="System" colorSpace="catalog"/>
+                                    <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                                </textFieldCell>
+                            </textField>
                         </subviews>
                         <constraints>
                             <constraint firstItem="Ihx-Um-rRa" firstAttribute="top" secondItem="wgo-Wf-Ua2" secondAttribute="bottom" constant="10" id="2cC-nc-dM5"/>
+                            <constraint firstItem="OMU-g1-G38" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" constant="10" id="81p-l6-sNz"/>
                             <constraint firstItem="wgo-Wf-Ua2" firstAttribute="top" secondItem="m2S-Jp-Qdl" secondAttribute="top" id="Lr5-T6-bHD"/>
                             <constraint firstAttribute="bottom" secondItem="Ihx-Um-rRa" secondAttribute="bottom" constant="10" id="O5w-lN-eRz"/>
                             <constraint firstAttribute="trailing" secondItem="wgo-Wf-Ua2" secondAttribute="trailing" id="dbJ-vm-jyL"/>
                             <constraint firstItem="wgo-Wf-Ua2" firstAttribute="leading" secondItem="m2S-Jp-Qdl" secondAttribute="leading" id="hdz-PA-2wk"/>
                             <constraint firstAttribute="trailing" secondItem="Ihx-Um-rRa" secondAttribute="trailing" constant="5" id="j90-qk-mqp"/>
+                            <constraint firstItem="OMU-g1-G38" firstAttribute="centerY" secondItem="Ihx-Um-rRa" secondAttribute="centerY" id="nPJ-5f-ETI"/>
                         </constraints>
                     </view>
                     <connections>

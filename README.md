@@ -1,5 +1,5 @@
 # swift-macos-airpod-availability-checker
-Simple macOS Swift app to check the availability of AirPods in the German retail store locations
+Simple macOS Swift app to check the availability of AirPods in the German retail store locations. It is *work in progress* or *dead*. Nevertheless the app is neither final nor more than a little gimmick :).
 
 ## Install
 1. `git clone git@github.com:tscholze/swift-macos-airpod-availability-checker.git`

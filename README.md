@@ -21,4 +21,4 @@ Simple macOS Swift app to check the availability of AirPods in the German retail
 I have no glue if Apple does not like it if the App Store json will be used outside the offical website.
 
 ## License
-Quotes is licensed under [MIT](https://en.wikipedia.org/wiki/MIT_License) License. Pods may differ. 
+The app is licensed under [MIT](https://en.wikipedia.org/wiki/MIT_License) License. Pods may differ. 

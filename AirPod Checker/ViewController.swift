@@ -21,9 +21,10 @@ class ViewController: NSViewController
     
     // MARK: - Private constants -
     
-    private let zipSouth = "86150"
-    private let zipNorth = "20095"
-    private let url = "https://www.apple.com/de/shop/retail/pickup-message?parts.0=MMEF2ZM%2FA&location="
+    private let zipSouth    = "86150"
+    private let zipNorth    = "20095"
+    private let jsonUrl     = "https://www.apple.com/de/shop/retail/pickup-message?parts.0=MMEF2ZM%2FA&location="
+    private let storeUrl    = "https://www.apple.com/de/shop/product/MMEF2ZM/A/airpods"
     
     
     // MARK: - Private properties -
@@ -58,6 +59,16 @@ class ViewController: NSViewController
         refreshEntries()
     }
     
+    
+    @IBAction func handleGoToStoreButtonTapped(_ sender: Any)
+    {
+        guard let url = URL(string: storeUrl) else
+        {
+            return
+        }
+        
+        NSWorkspace.shared().open(url)
+    }
     
     // MARK: - Private helper -
     
@@ -101,7 +112,7 @@ class ViewController: NSViewController
     {
         var foundEntries = [AvailableModel]()
         
-        Alamofire.request(url + zip).responseJSON {[weak self] response in
+        Alamofire.request(jsonUrl + zip).responseJSON {[weak self] response in
             
             guard let _self = self else
             {
@@ -258,8 +269,10 @@ class AvailableModel
     {
         self.name               = name
         self.city               = city
-        self.availableDate      = availableDate
-        self.availableInDays    = Date().time(toDate: availableDate, inUnit: .day)
+        self.availableDate      = availableDate.startOfDay
+        
+        let today               = Date().startOfDay
+        self.availableInDays    = today.time(toDate: availableDate, inUnit: .day)
     }
 }
 
@@ -268,6 +281,16 @@ class AvailableModel
 
 extension Date
 {
+    // MARK: - Computed properties -
+    
+    var startOfDay: Date
+    {
+        return Calendar.current.startOfDay(for: self)
+    }
+    
+    
+    // MARK: - Helpers -
+    
     func time(toDate date: Date, inUnit unit: Calendar.Component) -> Int?
     {
         let difference = Calendar.current.dateComponents(Set(arrayLiteral: unit), from: self, to: date)

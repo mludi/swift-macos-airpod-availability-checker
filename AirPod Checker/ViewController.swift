@@ -14,8 +14,9 @@ class ViewController: NSViewController
 {
     // MARK: - Outlets -
     
-    @IBOutlet private weak var tableView    : NSTableView!
-    @IBOutlet private weak var refreshButton: NSButton!
+    @IBOutlet fileprivate weak var tableView    : NSTableView!
+    @IBOutlet private weak var refreshButton    : NSButton!
+    @IBOutlet private weak var progressIndicator: NSProgressIndicator!
     
     
     // MARK: - Private constants -
@@ -46,9 +47,7 @@ class ViewController: NSViewController
         tableView.dataSource    = self
         tableView.delegate      = self
         
-        refeshEntries() {
-            self.tableView.reloadData()
-        }
+        refreshEntries()
     }
     
     
@@ -56,17 +55,16 @@ class ViewController: NSViewController
     
     @IBAction func handleRefreshButtonTapped(_ sender: Any)
     {
-        refeshEntries() {
-            self.tableView.reloadData()
-        }
+        refreshEntries()
     }
     
     
     // MARK: - Private helper -
     
-    private func refeshEntries(completion: @escaping () -> ())
+    private func refreshEntries()
     {
         refreshButton.isEnabled = false
+        progressIndicator.startAnimation(nil)
         
         retrieveStatusByZip(zip: zipSouth) {[weak self] (southEntries) in
             
@@ -93,6 +91,7 @@ class ViewController: NSViewController
                 
                 _self.tableView.reloadData()
                 _self.refreshButton.isEnabled = true
+                _self.progressIndicator.stopAnimation(false)
             }
         }
     }
@@ -132,12 +131,6 @@ class ViewController: NSViewController
                     continue
                 }
                 
-                // Ignore alreade added stores
-                if _self.entries.contains(where: {$0.name == name})
-                {
-                    continue
-                }
-                
                 // Post process
                 let trimmedData = availableDateString.replacingOccurrences(of: "Verfügbar<br/>", with: "")
                 guard let availableDate = _self.shortDateFormatter.date(from: "\(trimmedData) 2017") else
@@ -152,6 +145,43 @@ class ViewController: NSViewController
            completion(foundEntries)
         }
     }
+    
+    
+    fileprivate func suffixStringForDaysUntilAvailable(entry: AvailableModel) -> String
+    {
+        if entry.availableInDays == 0
+        {
+            return "heute"
+        }
+            
+        else if entry.availableInDays == 1
+        {
+            return "morgen"
+        }
+            
+        else
+        {
+            guard let dayString = entry.availableInDays else
+            {
+                return ""
+            }
+            
+            return  "in \(dayString) Tagen"
+        }
+    }
+    
+    
+    fileprivate func postTweet()
+    {
+        let selectedEntry   = entries[tableView.selectedRow]
+        let suffix          = suffixStringForDaysUntilAvailable(entry: selectedEntry)
+        let message         = "Der Apple Store \(selectedEntry.name ?? "") hat \(suffix) AirPods vorrätig."
+        let service         = NSSharingService(named: NSSharingServiceNamePostOnTwitter)
+        service?.delegate   = self
+        
+        service?.perform(withItems: [message])
+    }
+    
 }
 
 // MARK: - NSTableViewDelegate -
@@ -184,29 +214,7 @@ extension ViewController: NSTableViewDelegate
             
         else if identifier == "days"
         {
-            var value = ""
-            
-            if selectedEntry.availableInDays == 0
-            {
-                value = "heute"
-            }
-                
-            else if selectedEntry.availableInDays == 1
-            {
-                value = "morgen"
-            }
-                
-            else
-            {
-                guard let dayString = selectedEntry.availableInDays else
-                {
-                    return nil
-                }
-                
-                value = "in \(dayString) Tagen"
-            }
-            
-            cell.textField?.stringValue = value
+            cell.textField?.stringValue = suffixStringForDaysUntilAvailable(entry: selectedEntry)
         }
         
         return cell
@@ -221,6 +229,14 @@ extension ViewController: NSTableViewDataSource
     {
         return entries.count
     }
+}
+
+
+// MARK: - NSSharingServiceDelegate -
+
+extension ViewController: NSSharingServiceDelegate
+{
+    
 }
 
 

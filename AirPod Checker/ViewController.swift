@@ -7,8 +7,9 @@
 //
 
 import Cocoa
-import Alamofire
 
+typealias JSONDictionary = [String: Any]
+typealias JSONArray = [JSONDictionary]
 
 class ViewController: NSViewController
 {
@@ -99,10 +100,11 @@ class ViewController: NSViewController
                 
                 // Sort entries
                 _self.entries.sort(by: { $0.city < $1.city})
-                
-                _self.tableView.reloadData()
-                _self.refreshButton.isEnabled = true
-                _self.progressIndicator.stopAnimation(false)
+                DispatchQueue.main.async {
+                    _self.tableView.reloadData()
+                    _self.refreshButton.isEnabled = true
+                    _self.progressIndicator.stopAnimation(false)                    
+                }
             }
         }
     }
@@ -112,49 +114,54 @@ class ViewController: NSViewController
     {
         var foundEntries = [AvailableModel]()
         
-        Alamofire.request(jsonUrl + zip).responseJSON {[weak self] response in
-            
-            guard let _self = self else
+        guard let url = URL(string: "\(jsonUrl)\(zip)") else { return }
+        URLSession.shared.dataTask(with: URLRequest(url: url)) { [weak self] data, response, error in
+            if let error = error
             {
+                print("something went wrong: \(error)")
                 return
             }
-            
-            guard let json = response.result.value as? [String: Any] else
+            if let response = response as? HTTPURLResponse, response.statusCode == 200, let data = data
             {
-                return
-            }
-            
-            guard let body = json["body"] as? [String : Any],
-                let stores = body["stores"] as? [[String: Any]] else
-            {
-                print("Nothing found")
-                return
-            }
-            
-            for store in stores
-            {
-                guard let name = store["storeName"] as? String,
-                    let city = store["city"] as? String,
-                    let available = store["partsAvailability"] as? [String: Any],
-                    let part = available["MMEF2ZM/A"] as? [String: Any],
-                    let availableDateString = part["pickupSearchQuote"] as? String else
+                guard
+                    let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: AnyObject],
+                    let unwrappedJson = json
+                else
                 {
-                    continue
+                    return
                 }
-                
-                // Post process
-                let trimmedData = availableDateString.replacingOccurrences(of: "Verfügbar<br/>", with: "")
-                guard let availableDate = _self.shortDateFormatter.date(from: "\(trimmedData) 2017") else
+                guard
+                    let body = unwrappedJson["body"] as? JSONDictionary,
+                    let stores = body["stores"] as? JSONArray
+                else
                 {
-                    print("Skipping entry for store: \(name)")
-                    continue
+                    print("Nothing found")
+                    return
                 }
-                
-                foundEntries.append(AvailableModel(name: name, city: city, availableDate: availableDate))
+                for store in stores
+                {
+                    guard let name = store["storeName"] as? String,
+                        let city = store["city"] as? String,
+                        let available = store["partsAvailability"] as? [String: Any],
+                        let part = available["MMEF2ZM/A"] as? [String: Any],
+                        let availableDateString = part["pickupSearchQuote"] as? String else
+                    {
+                        continue
+                    }
+                    
+                    // Post process
+                    let trimmedData = availableDateString.replacingOccurrences(of: "Verfügbar<br/>", with: "")
+                    guard let availableDate = self?.shortDateFormatter.date(from: "\(trimmedData) 2017") else
+                    {
+                        print("Skipping entry for store: \(name)")
+                        continue
+                    }
+                    
+                    foundEntries.append(AvailableModel(name: name, city: city, availableDate: availableDate))
+                }
+                completion(foundEntries)                
             }
-            
-           completion(foundEntries)
-        }
+        }.resume()
     }
     
     
@@ -186,7 +193,7 @@ class ViewController: NSViewController
     {
         let selectedEntry   = entries[tableView.selectedRow]
         let suffix          = suffixStringForDaysUntilAvailable(entry: selectedEntry)
-        let message         = "Der Apple Store \(selectedEntry.name ?? "") hat \(suffix) AirPods vorrätig."
+        let message         = "Der Apple Store \(selectedEntry.name) hat \(suffix) AirPods vorrätig."
         let service         = NSSharingService(named: NSSharingServiceNamePostOnTwitter)
         service?.delegate   = self
         
@@ -249,52 +256,3 @@ extension ViewController: NSSharingServiceDelegate
 {
     
 }
-
-
-// MARK: - AvailableModel -
-
-class AvailableModel
-{
-    // MARK: - Internal properties -
-    
-    var name            : String!
-    var city            : String!
-    var availableDate   : Date!
-    var availableInDays : Int!
-    
-    
-    // MARK - Init -
-    
-    init(name: String, city: String, availableDate: Date)
-    {
-        self.name               = name
-        self.city               = city
-        self.availableDate      = availableDate.startOfDay
-        
-        let today               = Date().startOfDay
-        self.availableInDays    = today.time(toDate: availableDate, inUnit: .day)
-    }
-}
-
-
-// MARK: - Date extension -
-
-extension Date
-{
-    // MARK: - Computed properties -
-    
-    var startOfDay: Date
-    {
-        return Calendar.current.startOfDay(for: self)
-    }
-    
-    
-    // MARK: - Helpers -
-    
-    func time(toDate date: Date, inUnit unit: Calendar.Component) -> Int?
-    {
-        let difference = Calendar.current.dateComponents(Set(arrayLiteral: unit), from: self, to: date)
-        return difference.value(for: unit)
-    }
-}
-
